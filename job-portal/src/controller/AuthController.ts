@@ -17,7 +17,7 @@ class AuthController {
         let message = "Success";
         try {
             let authDao = new AuthDao();
-            let result = await authDao.getUser(req,req.body.user_id);
+            let result:any = await authDao.getUser(req,req.body.user_id);
             if (result) {
                 let isValidLogin = validateLogin(req.body.password, result.password)
                 if(isValidLogin) {
@@ -25,18 +25,15 @@ class AuthController {
                     const jwtToken = generateJWT(result.email, (result.role ??'jobSeeker'), req, null, sessionId);
                     req.headers['authorization'] = jwtToken;
                     res.header('X-AUTH-TOKEN', jwtToken);
-                    let response = new Response(StatusCodes.OK, 'YVP-AUTH', 'LOGIN', message, [result]);
-                    res.status(StatusCodes.OK).send(response);
-                } else {
-                    message = "User and Password is invalid"
-                    let response = new Response(StatusCodes.UNAUTHORIZED, 'YVP-AUTH', 'LOGIN', message, []);
-                    res.status(StatusCodes.UNAUTHORIZED).send(response);
                 }
-            } else {
+                if(!isValidLogin){
+                    message = "User and Password is invalid"
+                }
+            }else {
                 message = "User and Password is invalid"
-                let response = new Response(StatusCodes.UNAUTHORIZED, 'YVP-AUTH', 'LOGIN', message, []);
-                res.status(StatusCodes.UNAUTHORIZED).send(response);
             }
+            let response = new Response(StatusCodes.OK, 'AUTH', 'LOGIN', message, [result]);
+            res.status(StatusCodes.OK).send(response);
         } catch (e: any) {
             // @ts-ignore
             if (parseInt(process.env.DEBUG) === 1) {
@@ -141,6 +138,21 @@ class AuthController {
                 console.log(e.stack);
             }
             let response = new Response(StatusCodes.INTERNAL_SERVER_ERROR, "YVP-AUTH", "CHANGE-PASSWORD", e.message, [{"stack_trace": e.stack}]);
+            res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(response);
+        }
+    }
+    updateUserDetails = async  (req: any, res: any)=> {
+        try {
+            let authDao = new AuthDao();
+            let result = await authDao.updateUserDetails(req);
+            let response = new Response(StatusCodes.OK,  "AUTH", "UPDATE-USER-DETAIL", "Success", result);
+            res.status(StatusCodes.OK).send(response);
+        } catch (e: any) {
+            // @ts-ignore
+            if (parseInt(process.env.DEBUG) === 1) {
+                console.log(e.stack);
+            }
+            let response = new Response(StatusCodes.INTERNAL_SERVER_ERROR, "AUTH", "UPDATE-USER-DETAIL", e.message, [{"stack_trace": e.stack}]);
             res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(response);
         }
     }

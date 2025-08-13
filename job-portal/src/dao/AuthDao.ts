@@ -4,7 +4,7 @@ const config = require('../../index');
 
 export {}
 
-const mongoDb = require('./core/MongoDb');
+const mongoDb = require('../../../job-portal/src/dao/core/MongoDb');
 
 const uuid = require('uuid');
 // @ts-ignore
@@ -16,26 +16,12 @@ class AuthDao {
         try {
             let userObj = req.body;
 
-            // Check for required fields based on role
-            if (!userObj.name || !userObj.password) {
-                return Promise.resolve({message:"Name and password required"});
+            if (!userObj.name || !userObj.email || !userObj.password){
+                return Promise.resolve({message:"Name, email and password required"});
             }
-
-            // For candidates, check email
-            if (userObj.role === "candidate" && !userObj.email) {
-                return Promise.resolve({message:"Email is required for candidates"});
-            }
-
-            // For recruiters, check orgEmail
-            if (userObj.role === "recruiter" && !userObj.orgEmail) {
-                return Promise.resolve({message:"Organization email is required for recruiters"});
-            }
-
-            // Determine which email to use for database operations
-            const emailToUse = userObj.role === "candidate" ? userObj.email : userObj.orgEmail;
-            
             userObj["created_dtz"] = new Date();
-            const existing = await mongoDb.mongoDb.findOne('users', { email: emailToUse });
+            userObj["_id"] = uuid.v4();
+            const existing = await mongoDb.mongoDb.findOne('users', {email:userObj.email});
             if (existing)
                 return Promise.resolve({message:"Email already exists"});
 
@@ -46,13 +32,9 @@ class AuthDao {
             userObj["otp"] = otp;
             userObj["otpExpiry"] = otpExpiry;
             userObj["isVerified"] = false;
-            
-            // Store the appropriate email in the database
-            userObj["email"] = emailToUse;
-            
             await mongoDb.mongoDb.insertOne('users', userObj);
             const mailer = new EmailServiceDao();
-            await mailer.sendOtpEmail(emailToUse, otp);
+            await mailer.sendOtpEmail(userObj.email, otp);
         return Promise.resolve({ message: 'OTP sent to your email' });
     }
 
@@ -68,6 +50,21 @@ class AuthDao {
         try {
             let userObj = req.body;
             const existing = await mongoDb.mongoDb.findOne('users', {email:userId});
+            return Promise.resolve(existing);
+        }
+        catch(e: any) {
+            // @ts-ignore
+            if (parseInt(process.env.DEBUG) === 1) {
+                console.log(e.stack);
+            }
+            return Promise.reject(e);
+        }
+    }
+    updateUserDetails = async (req: any) => {
+        try {
+            let userObj:any = req.body;
+            userObj["modified_dtz"] = new Date();
+            const existing = await mongoDb.mongoDb.updateOne('users', {"_id":userObj._id},userObj);
             return Promise.resolve(existing);
         }
         catch(e: any) {

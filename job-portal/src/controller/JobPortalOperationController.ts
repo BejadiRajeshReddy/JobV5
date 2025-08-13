@@ -7,7 +7,7 @@ class JobPortalOperationController {
 
     getJoblist = async  (req: any, res: any)=> {
         try {
-            const jobPortalOperationDao = new JobPortalOperationDao(cosmos.cosmosDao);
+            const jobPortalOperationDao = new JobPortalOperationDao();
             let result = await jobPortalOperationDao.getJoblist(req);
             let response = new Response(StatusCodes.OK, "JOB-PORTAL", "JOB-FETCH-LIST", "Success", result);
             res.status(StatusCodes.OK).send(response);
@@ -22,7 +22,7 @@ class JobPortalOperationController {
     }
     insertJob = async  (req: any, res: any)=> {
         try {
-            const jobPortalOperationDao = new JobPortalOperationDao(cosmos.cosmosDao);
+            const jobPortalOperationDao = new JobPortalOperationDao();
             let result = await jobPortalOperationDao.insertJob(req);
             let response = new Response(StatusCodes.OK, "JOB-PORTAL", "INSERT-JOB-DATA", "Success", result);
             res.status(StatusCodes.OK).send(response);

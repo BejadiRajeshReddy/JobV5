@@ -4,9 +4,10 @@ const {BlobServiceClient} = require('@azure/storage-blob');
 const CommonDao = require('../dao/CommonDao');
 const cosmos = require('../../index');
 const AuthDao = require('../dao/AuthDao');
-const mongoDb = require('./core/MongoDb');
+const mongoDb = require('../../../job-portal/src/dao/core/MongoDb');
 class JobPortalOperationDao {
-
+    constructor() {
+    }
     getJoblist = async (req: any) => {
         try {
             let userObj = req.body;
